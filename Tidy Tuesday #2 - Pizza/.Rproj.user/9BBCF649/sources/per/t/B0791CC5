@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569872472873.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B0791CC5",
+    "lastKnownWriteTime" : 4323693664,
+    "last_content_update" : 1569872472873,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "CA70D4E5",
+        "caption" : "pizza_jared",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=pizza_jared&cache_key=CA70D4E5",
+        "displayedObservations" : 375,
+        "environment" : "",
+        "object" : "pizza_jared",
+        "preview" : 0,
+        "totalObservations" : 375,
+        "variables" : 9
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

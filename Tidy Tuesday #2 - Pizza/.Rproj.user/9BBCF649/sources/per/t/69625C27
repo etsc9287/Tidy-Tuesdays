@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569872861662.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "69625C27",
+    "lastKnownWriteTime" : 0,
+    "last_content_update" : 1569872861662,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "8360EA51",
+        "caption" : "pizza_datafiniti",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=pizza_datafiniti&cache_key=8360EA51",
+        "displayedObservations" : 10000,
+        "environment" : "",
+        "object" : "pizza_datafiniti",
+        "preview" : 0,
+        "totalObservations" : 10000,
+        "variables" : 10
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

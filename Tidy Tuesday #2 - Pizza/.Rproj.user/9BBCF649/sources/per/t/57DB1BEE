@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569872153162.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1288828176",
+    "id" : "57DB1BEE",
+    "lastKnownWriteTime" : 1569899219,
+    "last_content_update" : 1569899219708,
+    "path" : "~/Desktop/R/Personal Projects/Tidy Tuesday #2/tidyTuesdayPizza.R",
+    "project_path" : "tidyTuesdayPizza.R",
+    "properties" : {
+        "cursorPosition" : "33,0",
+        "scrollLine" : "15",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

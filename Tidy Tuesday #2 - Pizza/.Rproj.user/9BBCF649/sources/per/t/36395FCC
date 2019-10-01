@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569872390156.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "36395FCC",
+    "lastKnownWriteTime" : -5497605955927422268,
+    "last_content_update" : 1569872390156,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "27BBD5D4",
+        "caption" : "pizza_barstool",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=pizza_barstool&cache_key=27BBD5D4",
+        "displayedObservations" : 463,
+        "environment" : "",
+        "object" : "pizza_barstool",
+        "preview" : 0,
+        "totalObservations" : 463,
+        "variables" : 22
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

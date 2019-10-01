@@ -1,0 +1,37 @@
+library(tidyverse)
+library(lubridate)
+library(ggmap)
+library(devtools)
+library(ggthemr)
+library(extrafont)
+library(showtext)
+
+font_add_google(name = "Yesteryear", family = "yester")
+showtext_auto()
+ggthemr(palette = "dust", type = "outer", layout = "clear")
+
+
+pizza_jared <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-01/pizza_jared.csv")
+pizza_barstool <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-01/pizza_barstool.csv")
+pizza_datafiniti <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-01/pizza_datafiniti.csv")
+
+pizza_jared <- pizza_jared %>%
+  mutate(count = percent * total_votes)
+pizza_jared$count <- round(pizza_jared$count, 1)
+
+ggplot(data = pizza_jared, aes(votes)) +
+  geom_bar() +
+  ggtitle("Font Test") +
+  theme(text = element_text(family = "impact"))
+
+pizza_datafiniti <- pizza_datafiniti %>%
+  distinct()
+
+pizza <- pizza_barstool %>%
+  filter(name == "Steve's Pizza")
+
+get_map("New York City") %>% ggmap() +
+  geom_point(data = pizza_barstool, aes(longitude, latitude))
+
+
+?ggtitle
