@@ -1,0 +1,408 @@
+---
+title: 'Tidy Tuesday #1 - School Diversity'
+author: "Ethan Schacht"
+date: "9/26/2019"
+output: 
+  html_document:
+    toc: yes
+    number_sections: yes
+    code_folding: hide
+    theme: simplex
+    highlight: espresso
+---
+
+# **Introduction**
+
+This is my first Tidy Tuesday data analysis! Every Tuesday, a new dataset is uploaded to this github repository (https://github.com/rfordatascience/tidytuesday) for aspiring data analysts and data scientists to practice from and gain insights from the data.  I am relatively new to data analysis a young college student, though I believe these analyses will be very useful to people just getting started with the field, as it provides a good framework for exploring data.  This week, I will be working with a school diversity dataset.
+
+## Loading Libraries and Data Import
+
+First, we need to load our libraries and the csv file(s).  The files come from multiple datasets, and combining them will be necessary because one contains many missing values while the other covers a shorter timeframe.  Each row represents the data from an individual match
+
+```{r message=FALSE, warning=FALSE}
+
+#load libraries
+
+library(tidyverse)
+library(stringi)
+library(lubridate)
+library(scales)
+library(modelr)
+library(reshape2)
+
+diversity <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-09-24/school_diversity.csv")
+head(diversity, 10)
+```
+
+It appears that the rows are arranged by state, and we can see multiple occurances of the school district name as there are different school years.  This data is already pretty tidy but we will want a better idea of what each row represents.
+
+# Exploratory Data Analysis
+
+## Interpreting the Rows
+
+Let's arrange by school district name and school year to find out what each row tells us...
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 <- diversity %>%
+  arrange(LEA_NAME, SCHOOL_YEAR)
+
+head(diversity2, 20)
+
+table(diversity2$SCHOOL_YEAR)
+
+```
+
+We can see that each row represents a school district for either the 1994-1995 school year or the 2016-2017 school year, so each district gets 2 rows.  There also appears to be occurances of the 1994-1995 school year than the 2016-2017 school year, which could possibly tell us that some of the districts were discontinued.  It appears likely that this analysis will involve comparing diversity between the two timeframes.
+
+## Summarising the Data
+
+```{r message=FALSE, warning=FALSE}
+
+summary(diversity2)
+
+paste("NA's in LEAID:", sum(is.na(diversity2$LEAID)))
+paste("NA's in LEA_NAME:", sum(is.na(diversity2$LEA_NAME)))
+paste("NA's in ST:", sum(is.na(diversity2$ST)))
+paste("NA's in d_locale_Txt:", sum(is.na(diversity2$d_Locale_Txt)))
+paste("NA's in SCHOOL_YEAR:", sum(is.na(diversity2$SCHOOL_YEAR)))
+
+```
+
+Most of our numeric values are proportions of different races in each district for a given year. We also have other useful information such as the state, whether the surroundings of a district are rural, urban, a town, etc (d_locale_Txt), variance, and the degree to which a district is integrated.
+
+## Missing Values 
+
+From the summary, it also appears that there are NA's in 4 columns: d_locale_txt, multi (multi-ethnic proportion of student population), variance, and integration group.  There are 27,944 rows, so lets see the proportion of NA's in each of these columns.
+
+```{r message=FALSE, warning=FALSE}
+
+rows = 27944
+
+paste("NA proportion in multi column:", round(sum(is.na(diversity2$Multi)) / rows, 3))
+paste("NA proportion in variance column:", round(sum(is.na(diversity2$variance)) / rows, 3))
+paste("NA proportion in int_group column:",round(sum(is.na(diversity2$int_group)) / rows, 3))
+paste("NA proportion in d_locale_txt column:", round(sum(is.na(diversity2$d_Locale_Txt)) / rows, 3))
+
+```
+
+We can see that 52.8% of our values in the multi ethnic proprtion are missing values, and almost 90% of both variance and integration group are missing values! If we ever choose to analyze these variables, we won't have much data.  Let's look at the integration and variance columns to verify that the positions of their missing and non-missing valies correspond.
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>% 
+  select(variance, int_group) %>%
+  head(20)
+
+```
+
+They do correspond.  This is likely due to the fact that the integration variable is simply an interpretation of the variance in diversity.
+
+## Do our Proportions Add up to 100?
+
+Let's make sure our proportions of different racial groups add to approximately 100%, so we know we are working with data that is error-free.  Note that most of our multi racial values are missing, so this may cause error.
+
+```{r message=FALSE, warning=FALSE}
+
+racial_groups <- diversity2 %>%
+  select(6:11) %>%
+  mutate(total_prop = if_else(is.na(Multi), AIAN + Asian + Black + Hispanic + White, AIAN + Asian + Black + Hispanic + White + Multi))
+
+table(racial_groups$total_prop)
+
+```
+
+There appears to be no error in the data entry.  The proportions add up to 100 even when the multi racial value is missing, so these missing values may simply be due to districts not providing a multi racial option in their surveys.
+
+## Variation
+
+Our first visualizations should illustrate the distributions of individual variables...
+
+### Variation of Races {.tabset .tabset-fade .tabset-pills}
+
+#### American Indians / Native Alaskans
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>%
+  ggplot(aes(AIAN)) +
+    geom_histogram(binwidth = 2)
+
+```
+
+#### Asian
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>%
+  ggplot(aes(Asian)) +
+    geom_histogram(binwidth = 2)
+
+```
+
+#### Black
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>%
+  ggplot(aes(Black)) +
+    geom_histogram(binwidth = 2)
+
+```
+
+#### Hispanic
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>%
+  ggplot(aes(Hispanic)) +
+    geom_histogram(binwidth = 2)
+
+```
+
+#### Multi
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>%
+  ggplot(aes(Multi)) +
+    geom_histogram(binwidth = 2)
+
+```
+
+#### White
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>%
+  ggplot(aes(White)) +
+    geom_histogram(binwidth = 2)
+
+```
+
+The only distribution that is skewed to the left, meaning nearly all school districts have a white student majority.  Hispanics appear to be the second most common race.
+
+### Other Variation {.tabset .tabset-fade .tabset-pills}
+
+Let's look at the distributions of some of our other variables...
+
+#### Student Body Count
+
+```{r message=FALSE, warning=FALSE}
+
+total_arranged <- diversity2 %>%
+  arrange(desc(Total)) %>%
+  filter(Total < 100000)
+
+total_arranged %>%
+  ggplot(aes(Total)) +
+    geom_histogram(binwidth = 250)
+
+diversity2 %>%
+  arrange(desc(Total)) %>%
+  filter(Total >= 100000) %>%
+  select(LEA_NAME, SCHOOL_YEAR, Total)
+
+```
+
+This distribution is skewed way to the right.  I filtered out all of the districts with a student body count of greater than 100,000 to make the bins more visible, so I also created a table to schow all the districts with more than 100,000 students.
+
+#### States
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>%
+  mutate(ST = ST %>% fct_infreq() %>% fct_rev()) %>%
+  ggplot(aes(ST)) +
+    geom_bar() +
+    coord_flip()
+
+```
+
+Texas, California, and Illinois contain the most occurances in the dataset.  Keep in mind that most districts get a row for 1994-1995 and 2016-2017.
+
+
+#### Location Type
+
+```{r message=FALSE, warning=FALSE}
+
+diversity2 %>%
+  mutate(d_Locale_Txt = d_Locale_Txt %>% fct_infreq() %>% fct_rev()) %>%
+  filter(!is.na(d_Locale_Txt)) %>%
+  ggplot(aes(d_Locale_Txt)) +
+    geom_bar() +
+    coord_flip()
+
+```
+
+Most districts in the combination of the school years 94-95 and 16-17 are in rural areas.
+
+## Covariation
+
+Now lets look at the relationships between some of our variables... 
+
+### Have Schools Become More Diverse?
+
+Let's compare the overall diversity of school districts in America from the 1994-1995 school year to the 2016-2017 school year.
+
+```{r message=FALSE, warning=FALSE}
+
+diversity_year <- diversity2 %>%
+  group_by(SCHOOL_YEAR, diverse) %>%
+  summarise(count = n()) 
+  
+diversity_year %>%
+  ggplot(aes(x = SCHOOL_YEAR, y = count, fill = diverse)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    xlab("School Year") +
+    ylab("Number of Districts") +
+    ggtitle("Diversity Change in American School Districts between 94-95 and 16-17") +
+    labs(fill = "Diversity Rank") +
+    theme_light()
+
+```
+
+It appears that American school districts as a whole have become far more diverse in the past 20+ years.  However, does this hold for every state?
+
+### Which States Have Best Improved the Diversity of Their School Districts? {.tabset .tabset-fade .tabset-pills}
+
+```{r message=FALSE, warning=FALSE}
+
+diversity_state <- diversity2 %>%
+  group_by(SCHOOL_YEAR, diverse, ST) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  complete(SCHOOL_YEAR, diverse, ST, fill = list(count = 0)) %>%
+  spread(key = diverse, value = count)
+
+
+#My method of spreading with multiple values
+
+year94 <- diversity_state %>%
+  filter(SCHOOL_YEAR == "1994-1995")
+year16 <- diversity_state %>%
+  filter(SCHOOL_YEAR == "2016-2017")
+diversity_state2 <- inner_join(year94, year16, by = "ST")
+
+diversity_state2 <- diversity_state2 %>%
+  mutate(diverse_diff_mult = (`Diverse.y` / `Diverse.x`)) %>%
+  mutate(undiverse_diff_mult = (`Undiverse.y` / `Undiverse.x`)) %>%
+  mutate(ex_undiverse_diff_mult = (`Extremely undiverse.y` / `Extremely undiverse.x`)) %>%
+  mutate(districts_94 = `Diverse.x` + `Extremely undiverse.x` + `Undiverse.x`) %>%
+  mutate(districts_16 = `Diverse.y` + `Extremely undiverse.y` + `Undiverse.y`) %>%
+  mutate(district_diff = districts_16 - districts_94) %>%
+  mutate(district_diff_prop = district_diff / districts_94) %>%
+  filter(`Diverse.y` >= 50)
+  
+top_diverse <- diversity_state2 %>%
+  arrange(desc(diverse_diff_mult)) %>%
+  head(10)
+
+bottom_diverse <- diversity_state2 %>%
+  arrange(desc(diverse_diff_mult)) %>%
+  tail(10)
+  
+```
+
+It is somewhat difficult to accurately analyze this data.  When deciding how to rank which states had the greatest increases in school diversity, we must consider increase in our "diversity" total against decreases in our "undiverse" and "extremely undiverse" total, as well as the statistical signifance of the amount of districts in each state.  Note that the amount of districts in 94-95 is not the same as the amount of districts in 16-17 either.  
+
+I decided to only consider an uptrend in the "diverse" category, as I noticed that many states which experienced great decreases in their "extremely undiverse category" simply had greater increases in their "undiverse category" too, illustrating that using these two similar columns only raises more complications. We also account for the significance of each state's total present-day district count.  States with fewer than 50 diverse districts in 2016 are filtered out.
+
+#### Most Diverse
+
+```{r message=FALSE, warning=FALSE}
+
+top_diverse %>%
+  ggplot(aes(diverse_diff_mult, fct_reorder(ST, diverse_diff_mult), size = districts_16)) +
+    geom_point() +
+    xlab("Multiple of Diverse School Districts") +
+    ylab("State") +
+    ggtitle("States With the Most Increased School Diversity (94-95 to 16-17)") +
+    labs(size = "Total Districts") +
+    theme_light()
+```
+
+We can see that most of the states with increased diversity in their school districts are in the midwest or north.
+
+#### Least Diverse
+
+```{r message=FALSE, warning=FALSE}
+
+bottom_diverse %>%
+  ggplot(aes(diverse_diff_mult, fct_reorder(ST, diverse_diff_mult) %>% fct_rev(), size = districts_16)) +
+    geom_point() +
+    xlab("Multiple of Diverse School Districts") +
+    ylab("State") +
+    ggtitle("States With the Least Increased School Diversity (94-95 to 16-17)") +
+    labs(size = "Total Districts") +
+    theme_light()
+```
+
+Most of the school districts with the lowest increase in diversity are in the south, as Mississippi has actually experienced a decrease in diverse school districts.  However, the most statistically significant point is California.
+
+#### Gain/Loss of Districts by State
+
+We must also understand the extent to which different states have lost or gained school districts in between the two timeframes so we can determine more significance in the change of diversity from the previous graphs.  Earlier in the EDA, we saw that the amount of overall school districts decreased from 1994-1995 to 2016-2017, so let's see how this looks for each state.
+
+```{r message=FALSE, warning=FALSE}
+
+diversity_state2 %>%
+  mutate(ST = factor(ST, levels = ST[order(district_diff_prop)]) %>% fct_rev()) %>%
+  ggplot(aes(ST, district_diff_prop, fill = districts_16)) +
+    geom_bar(stat = "identity") +
+    geom_label(aes(label = district_diff), color = "white", size = 2) +
+    coord_flip() +
+    ylab("Proportion of Schools Lost or Gained") +
+    xlab("State") +
+    scale_y_continuous(label = percent_format()) +
+    ggtitle("Gain and Loss of School Districts for Each State (94-95 to 16-17)", subtitle = "(Labels represent amount of districts)") +
+    labs(fill = "Total Districts")
+
+```
+
+Oregon, Arizona, and Minnesota have lost the most districts (proportion-wise), and Illinois and Calfiornia have also lost a great proportion of their districts will strong statistical significance.  Therefore, the true increase in school district diversity is likely higher in these states than what the previous graphs show.  Alabama is the one state that has gained school districts between the two timeframes, so any school diversity increase in this state is likely sightly overestimated.
+
+### How Do Developed Environments Affect Diversity?
+
+```{r message=FALSE, warning=FALSE}
+
+counts <- diversity2 %>%
+  filter(SCHOOL_YEAR == "1994-1995") %>%
+  group_by(d_Locale_Txt) %>%
+  summarise(count = n())
+
+environments <- diversity2 %>%
+  group_by(d_Locale_Txt, SCHOOL_YEAR) %>%
+  summarise(white_pct = mean(White), hispanic_pct = mean(Hispanic), asian_pct = mean(Asian), black_pct = mean(Black), aian_pct = mean(AIAN), multi_pct = mean(Multi)) %>%
+  filter(!is.na(d_Locale_Txt)) %>%
+  melt() %>%
+  spread(key = SCHOOL_YEAR, value = value) %>%
+  mutate(prop_diff = (`2016-2017` - `1994-1995`) / 100) %>%
+  filter(variable != "multi_pct") %>%
+  left_join(counts, by = "d_Locale_Txt") %>%
+  mutate(variable = str_replace(variable, "_", " ") %>% str_to_title(variable)) %>%
+  mutate(d_Locale_Txt = str_replace(d_Locale_Txt, "-", " (") %>% paste0(")") %>% str_to_title(d_Locale_Txt))
+
+?str_to_upper
+
+environments %>%
+  ggplot(aes(variable, prop_diff, fill = count)) +
+    geom_bar(stat = "identity") +
+    facet_wrap(~ d_Locale_Txt, nrow = 4) +
+    coord_flip() +
+    scale_y_continuous(label = percent_format()) +
+    ylab("Proportion Difference") +
+    xlab(NULL) +
+    ggtitle("Racial Demographic Changes for School Districts (1994-1995 to 2016-2017)", subtitle = "(Grouped by Environments)") +
+    labs(fill = "Districts") +
+    scale_fill_gradient(low = "green", high = "red") +
+    theme_dark()
+
+```
+
+```{r message=FALSE, warning=FALSE}
+
+boulder <- diversity2 %>%
+  filter(str_detect(LEA_NAME, "thompson"))
+
+```
