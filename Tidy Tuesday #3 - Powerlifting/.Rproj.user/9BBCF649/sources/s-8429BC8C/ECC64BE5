@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1570515479437.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "ECC64BE5",
+    "lastKnownWriteTime" : 1570468485,
+    "last_content_update" : 1570468485,
+    "path" : "~/Desktop/R/Personal Projects/AirBnb Project/AirBnb Project.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "445,0",
+        "scrollLine" : "431"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

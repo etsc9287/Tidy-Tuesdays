@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1570477344340.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3187589298",
+    "id" : "37CB0CDB",
+    "lastKnownWriteTime" : 1570516855,
+    "last_content_update" : 1570516855385,
+    "path" : "~/Desktop/R/Personal Projects/Tidy-Tuesdays/Tidy-Tuesdays/Tidy Tuesday #3 - Powerlifting/tidytuesday3_code.R",
+    "project_path" : "tidytuesday3_code.R",
+    "properties" : {
+        "cursorPosition" : "107,0",
+        "scrollLine" : "89",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

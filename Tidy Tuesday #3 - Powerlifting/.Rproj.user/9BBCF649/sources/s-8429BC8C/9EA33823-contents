@@ -1,0 +1,721 @@
+---
+title: 'Roger Federer vs. Novak Djokovic vs. Rafael Nadal: Who is the GOAT?'
+author: "Ethan Schacht"
+date: "8/4/2019"
+output: 
+  html_document:
+    toc: yes
+    number_sections: yes
+    code_folding: hide
+    theme: simplex
+    highlight: espresso
+---
+
+# **Introduction**
+
+Welcome to my first kernel on Kaggle! Using the R programming language, I will use EDA and data visualizations to determine who is the tennis GOAT (Greatest of All Time) between Roger Federer, Rafael Nadal, and Novak Djokovic.  I was inspired by my passion for the game of tennis as well as a similar kernel by Kaggle user, Xavier, involving the greatest basketball players of all time: [Click this link to access that Kernel](https://www.kaggle.com/xvivancos/michael-jordan-vs-kobe-bryant-vs-lebron-james/code#header).  I will continously update this kernel over time with more analysis!
+
+<center> ![Djokovic (Left), Nadal (Center), and Federer (Right)](https://www.theweek.co.uk/sites/theweek/files/styles/16x8_465/public/2019/01/novak_djokovic_rafael_nadal_roger_federer_tennis_grand_slam_titles_getty_images.jpg) </center>
+
+## Important Notes
+
+* 2019 data will not included in the time series because full years are necessarily to calculate year-over-year averages for a more accurate analysis.  When 2020 rolls around and the data is available, I will update this kernel accordingly!
+* Because all three athletes are still competing professionally, and some may retire sooner than others, the data will be most accurate when all three players finish their professional careers.  We don't know when that will be, so we will make the most of the data we have!
+
+
+# **Preparing the Data**
+
+## Loading Libraries and Data Import
+
+First, we need to load our libraries and the csv files.  The files come from multiple datasets, and combining them will be necessary because one contains many missing values while the other covers a shorter timeframe.  Each row represents the data from an individual match
+
+```{r message=FALSE, warning=FALSE}
+
+#load libraries
+
+library(tidyverse)
+library(lubridate)
+library(stringr)
+library(modelr)
+library(reshape2)
+
+#read csvs
+
+atp1 <- read_csv("atp_matches_2000.csv")
+atp2 <- read_csv("atp_matches_2001.csv")
+atp3 <- read_csv("atp_matches_2002.csv")
+atp4 <- read_csv("atp_matches_2003.csv")
+atp5 <- read_csv("atp_matches_2004.csv")
+atp6 <- read_csv("atp_matches_2005.csv")
+atp7 <- read_csv("atp_matches_2006.csv")
+atp8 <- read_csv("atp_matches_2007.csv")
+atp9 <- read_csv("atp_matches_2008.csv")
+atp10 <- read_csv("atp_matches_2009.csv")
+atp11 <- read_csv("atp_matches_2010.csv")
+atp12 <- read_csv("atp_matches_2011.csv")
+atp13 <- read_csv("atp_matches_2012.csv")
+atp14 <- read_csv("atp_matches_2013.csv")
+atp15 <- read_csv("atp_matches_2014.csv")
+atp16 <- read_csv("atp_matches_2015.csv")
+atp17 <- read_csv("atp_matches_2016.csv")
+atp19 <- read_csv("ATP.csv") %>%
+  filter(str_sub(tourney_id, 1 , 4) %in% c("2017", "2018", "2019"))
+atp20 <- read_csv("ATP.csv") %>%
+  filter(str_sub(tourney_id, 1 , 4) %in% c("1998", "1999"))
+
+```
+
+
+## Data Cleaning
+
+A small amount of cleaning is necessary to extract the relevant data.  We need to combine the dataframes and only focus on our three GOAT candidates.  Then we can look at our final dataframe ready to be analyzed (NA's will be dropped when we focus on those variables).
+
+```{r message=FALSE, warning=FALSE}
+
+#combine the data
+
+atp <- rbind(atp1, atp2, atp3, atp4, atp5, atp6, atp7, atp8, atp9, atp10, atp11, atp12, atp13, atp14, atp15, atp16, atp17, atp19, atp20) %>%
+  mutate(year = str_sub(tourney_id, 1, 4)) %>%
+  arrange(year)
+
+#get the GOATs
+
+atp_goats <- atp %>%
+  filter(winner_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal") | loser_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal"))
+
+atp_goats$tourney_date <- ymd(atp_goats$tourney_date)
+
+str(atp_goats)
+
+```
+
+
+# **Data Analysis**
+
+## Grand Slam Performance
+
+Perhaps the most common indicator used to determine greatness in professional tennis is the Grand Slam.  This class of the biggest tournaments in the world include the Australian Open, Roland Garros (French Open), Wimbledon, and the US open.  Countless players dream of competing in one of these tournaments in front of millions of viewers, though only 128 qualify.  The dominance of Djokovic, Nadal, and Federer in these tournmants continues to be unrivaled and will likely stay unirvaled for a long period of time.
+
+```{r message=FALSE, warning=FALSE}
+
+grandSlams <- atp_goats %>%
+  select(1:6, winner_name, loser_name, round, score) %>%
+  filter(tourney_level == "G") %>%
+  mutate(year = year(tourney_date))
+
+surfaceKey <- grandSlams %>%
+  select(tourney_name, surface) %>%
+  mutate(tourney_name = if_else(tourney_name == "Us Open", "US Open", tourney_name)) %>%
+  distinct()
+
+```
+
+<center> ![The Four Grand Slams](https://www.dummysports.com/wp-content/uploads/grand-slams-prize-money-770x470.jpg) </center>
+
+### Overall Winning Frequency {.tabset .tabset-fade .tabset-pills}
+
+First, lets analyze each player's raw frequency of Grand Slam matches and titles won.  Here is a key of the surfaces on which each grand slam is played.
+
+```{r message=FALSE, warning=FALSE}
+
+print(surfaceKey)
+
+```
+
+#### Career Match Wins 
+
+```{r message=FALSE, warning=FALSE}
+
+totalGrandSlamWins <- grandSlams %>%
+  filter(winner_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal")) %>%
+  mutate(tourney_name = if_else(tourney_name == "Us Open", "US Open", tourney_name)) %>%
+  filter(year < 2019)
+
+groupedSlamWins2 <- totalGrandSlamWins %>%
+  group_by(winner_name) %>%
+  summarise(n = n())
+
+slamsByTourney <- totalGrandSlamWins %>%
+  group_by(winner_name, tourney_name) %>%
+  summarise(count = n())
+
+ggplot() +
+  geom_bar(data = totalGrandSlamWins, aes(x = winner_name, fill = factor(tourney_name, levels = c("Wimbledon", "US Open", "Roland Garros", "Australian Open")))) +
+  geom_label(data = groupedSlamWins2, aes(x = winner_name, y = n, label = n)) +
+  geom_text(data = slamsByTourney, aes(x = winner_name, y = count, label = count), position = position_stack(vjust = 0.5)) +
+  xlab("Player") +
+  ylab("Number of Grand Slam Wins") +
+  labs(fill = "Grand Slam Name") +
+  ggtitle("Number of Grand Slam Match Wins by Player", subtitle = "(Prior to 2019)") +
+  theme_bw()
+
+```
+
+We can see that Federer has both the most grand slam match wins and the most grand slam title wins.  You might also notice that the majority of Nadal's title wins come from one tournament which is Roland Garros.  This is due to the fact that Roland Garros is the only grand slam played on clay surfaced courts, and Nadal is known as "the King of Clay".
+
+#### Career Title Wins 
+
+```{r message=FALSE, warning=FALSE}
+
+grandSlamWins <- totalGrandSlamWins %>%
+  filter(round == "F")
+
+groupedSlamWins <- grandSlamWins %>%
+  group_by(winner_name) %>%
+  summarise(n = n())
+
+slamsByTourney2 <- grandSlamWins %>%
+  group_by(winner_name, tourney_name) %>%
+  summarise(count = n())
+
+ggplot() +
+  geom_bar(data = grandSlamWins, aes(x = winner_name, fill = factor(tourney_name, levels = c("Wimbledon", "US Open", "Roland Garros", "Australian Open")))) +
+  geom_label(data = groupedSlamWins, aes(x = winner_name, y = n, label = n)) +
+  geom_text(data = slamsByTourney2, aes(x = winner_name, y = count, label = count), position = position_stack(vjust = 0.5)) +
+  xlab("Player") +
+  ylab("Number of Grand Slam Wins") +
+  labs(fill = "Grand Slam Name") +
+  ggtitle("Number of Grand Slam Titles by Player", subtitle = "(Prior to 2019)") +
+  theme_bw()
+
+```
+
+We can see that Federer has both the most grand slam match wins and the most grand slam title wins.  You might also notice that the majority of Nadal's title wins come from one tournament which is Roland Garros.  This is due to the fact that Roland Garros is the only grand slam played on clay surfaced courts, and Nadal is known as "the King of Clay".
+
+
+### Winning Frequency Over Time {.tabset .tabset-fade .tabset-pills}
+
+The problem with our last section is that it didn't take into account each player's consistency and length of career.  Now, lets analyze each player's performance over the course of their careers.
+
+
+#### Career Match Wins Over Time
+
+```{r message=FALSE, warning=FALSE}
+
+totalSlamsOverTime <- grandSlams %>%
+  filter(winner_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal")) %>%
+  group_by(year, winner_name) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  complete(year, winner_name, fill = list(count = 0)) %>%
+  filter((winner_name == "Roger Federer" & year >= 1999) | (winner_name == "Rafael Nadal" & year >= 2003) | (winner_name == "Novak Djokovic" & year >= 2005))
+fedZeroes2 <- tibble(year = 1999, winner_name = "Roger Federer", count = 0)
+totalSlamsOverTime2 <- fedZeroes2 %>%
+  rbind(totalSlamsOverTime)
+
+averageSlams2 <- totalSlamsOverTime2 %>%
+  group_by(winner_name) %>%
+  summarise(avg_slams = mean(count))
+averageSlams2$avg_slams <- round(averageSlams2$avg_slams, digits = 2)
+
+ggplot(data = totalSlamsOverTime2, aes(x = year, y = count, color = winner_name)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~winner_name, nrow = 3) +
+  geom_hline(data = averageSlams2, aes(yintercept = avg_slams), linetype = "dashed", color = "white") +
+  geom_text(data = averageSlams2, aes(x = 2001, y = if_else(winner_name == "Rafael Nadal", 29.6, 32), label = "Avg wins / year:"), color = "white") +  
+  geom_text(data = averageSlams2, aes(x = 2001, y = if_else(winner_name == "Rafael Nadal", 20.6, 23), label = avg_slams), color = "white") +
+  scale_y_continuous(limits = c(0,35)) +
+  scale_x_continuous(limits = c(1999,2018)) +
+  xlab("Year") +
+  ylab("Number of Grand Slam Match Wins") +
+  ggtitle("Performance Over Time: Grand Slam Match Wins per Year") +
+  theme_dark() +
+  theme(legend.position = "none")
+
+```
+
+We can see that all three players are evenly matched in terms of average titles per year, though Djokovic leads in terms of average wins per year.  Note that some error may be caused by injuries and the fact that each player's first professional year wasn't a full year.
+
+#### Career Title Wins Over Time
+
+```{r message=FALSE, warning=FALSE}
+
+slamsOverTime <- grandSlams %>%
+  filter(round == "F") %>%
+  group_by(year, winner_name) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  complete(year, winner_name, fill = list(count = 0)) %>%
+  filter((winner_name == "Roger Federer" & year >= 1999) | (winner_name == "Rafael Nadal" & year >= 2003) | (winner_name == "Novak Djokovic" & year >= 2005))
+fedZeroes <- tibble(year = 1999:2002, winner_name = "Roger Federer", count = 0)
+slamsOverTime2 <- fedZeroes %>%
+  rbind(slamsOverTime)
+
+averageSlams <- slamsOverTime2 %>%
+  group_by(winner_name) %>%
+  summarise(avg_slams = mean(count))
+averageSlams$avg_slams <- round(averageSlams$avg_slams, digits = 2)
+
+ggplot(data = slamsOverTime2, aes(x = year, y = count, color = winner_name)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~winner_name, nrow = 3) +
+  geom_hline(data = averageSlams, aes(yintercept = avg_slams), linetype = "dashed", color = "white") +
+  geom_text(data = averageSlams, aes(x = 2001, y = 3, label = "Avg titles / year:"), color = "white") +  
+  geom_text(data = averageSlams, aes(x = 2001, y = 2, label = avg_slams), color = "white") +
+  scale_y_continuous(limits = c(0,4)) +
+  scale_x_continuous(limits = c(1999,2018)) +
+  xlab("Year") +
+  ylab("Number of Grand Slam Titles") +
+  ggtitle("Performance Over Time: Grand Slam Titles per Year") +
+  theme_dark() +
+  theme(legend.position = "none")
+
+```
+
+We can see that all three players are evenly matched in terms of average titles per year, though Djokovic leads in terms of average wins per year.  Note that some error may be caused by injuries and the fact that each player's first professional year wasn't a full year.
+
+
+### Fifth Set Performance
+
+One unique element of Grand Slams is that all mens' matches are best out of five sets, whereas the matches of all other ATP tournaments are best out of three sets.  Fifth sets often require the greatest physical and mental challenge, so this will be an important statistic to compare among the three players.
+
+```{r message=FALSE, warning=FALSE}
+
+fifthSets <- grandSlams %>%
+  filter(str_count(score, " ") > 3)
+
+fifthSetWins <- fifthSets %>%
+  filter(winner_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal")) %>%
+  group_by(winner_name) %>%
+  summarise(count = n())
+
+fifthSetLosses <- fifthSets %>%
+  filter(loser_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal")) %>%
+  group_by(loser_name) %>%
+  summarise(count = n())
+
+fifthSetFinal <- inner_join(fifthSetWins, fifthSetLosses, by = c("winner_name" = "loser_name")) %>%
+  rename(Win = count.x, Loss = count.y)
+meltedFifth <- melt(fifthSetFinal, id.vars = "winner_name")
+
+ggplot(data = meltedFifth, aes(x = winner_name, y = value, fill = factor(variable, levels = c("Loss", "Win")))) +
+  geom_bar(stat = "identity", position = "fill") +
+  geom_text(aes(label = value), position = position_fill(vjust = 0.5)) +
+  xlab("Player") +
+  ylab("Wins / Loss Proportion") +
+  ggtitle("Grand Slam Fifth Set Performance by Player") +
+  labs(fill = "Result") +
+  theme_bw()
+
+```
+
+Djokovic wins this section, as well.
+
+
+## Overall ATP Tour Performance
+
+This section will track each player's overall performance throughout the entire ATP tour, inlcuding Grand Slams.  Although many people only enjoy keeping track of Grand Slam tournaments, this is important because we will work with a greater sample size of statistics than we did in the Grand Slams section.
+
+```{r message=FALSE, warning=FALSE}
+
+atpPerform <- atp_goats %>%
+  select(1:6, winner_name, loser_name, round, score) %>%
+  mutate(year = year(tourney_date))
+
+```
+
+### Winning Frequency Overall and Over Time {.tabset .tabset-fade .tabset-pills}
+
+Let's first look at the statistics we analyzed before, but we will include all ATP matches as opposed to only Grand Slams.  Let's see if the players exhibit the same patterns...
+
+#### Career Match Wins 
+
+```{r message=FALSE, warning=FALSE}
+
+totalATPWins <- atpPerform %>%
+  filter(winner_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal")) %>%
+  mutate(tourney_name = if_else(tourney_name == "Us Open", "US Open", tourney_name)) %>%
+  filter(year < 2019)
+
+groupedATPWins2 <- totalATPWins %>%
+  group_by(winner_name) %>%
+  summarise(n = n())
+
+ggplot() +
+  geom_bar(data = totalATPWins, aes(x = winner_name, fill = if_else(winner_name == "Roger Federer", "red", if_else(winner_name == "Rafael Nadal", "green", "blue")))) +
+  geom_label(data = groupedATPWins2, aes(x = winner_name, y = n, label = n)) +
+  xlab("Player") +
+  ylab("Number of ATP Match Wins") +
+  labs(fill = "ATP Name") +
+  ggtitle("Number of ATP Wins by Player", subtitle = "(Prior to 2019)") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+```
+
+Similarly to the corresponding Grand Slam statistics, Federer leads in terms of total number of wins and titles.  However, in the total ATP stats, Federer also leads in terms of the average number of ATP match wins per year and essentially ties Djokovic in ATP titles per year.  This would tell us that Federer is a stronger overall ATP player than Grand Slam player in relation to Djokovic and Nadal.  We can also see that Nadal leads Djokovic in total ATP match wins whereas he trails Djokovic in total Grand Slam match wins.  Again, note that some error may be caused by injuries and the fact that each player’s first professional year wasn’t a full year.
+
+#### Career Title Wins 
+
+```{r message=FALSE, warning=FALSE}
+
+ATPWins <- totalATPWins %>%
+  filter(round == "F")
+
+groupedATPWins <- ATPWins %>%
+  group_by(winner_name) %>%
+  summarise(n = n())
+
+ggplot() +
+  geom_bar(data = ATPWins, aes(x = winner_name, fill = if_else(winner_name == "Roger Federer", "red", if_else(winner_name == "Rafael Nadal", "green", "blue")))) +
+  geom_label(data = groupedATPWins, aes(x = winner_name, y = n, label = n)) +
+  xlab("Player") +
+  ylab("Number of ATP Wins") +
+  ggtitle("Number of ATP Titles by Player", subtitle = "(Prior to 2019)") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+```
+
+
+Similarly to the corresponding Grand Slam statistics, Federer leads in terms of total number of wins and titles.  However, in the total ATP stats, Federer also leads in terms of the average number of ATP match wins per year and essentially ties Djokovic in ATP titles per year.  This would tell us that Federer is a stronger overall ATP player than Grand Slam player in relation to Djokovic and Nadal.  We can also see that Nadal leads Djokovic in total ATP match wins whereas he trails Djokovic in total Grand Slam match wins.  Again, note that some error may be caused by injuries and the fact that each player’s first professional year wasn’t a full year.
+
+#### Career Match Wins Over Time
+
+```{r message=FALSE, warning=FALSE}
+
+totalATPOverTime <- atpPerform %>%
+  filter(winner_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal")) %>%
+  group_by(year, winner_name) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  complete(year, winner_name, fill = list(count = 0)) %>%
+  filter((winner_name == "Roger Federer" & year >= 1998) | (winner_name == "Rafael Nadal" & year >= 2002) | (winner_name == "Novak Djokovic" & year >= 2004))
+
+averageATP2 <- totalATPOverTime %>%
+  group_by(winner_name) %>%
+  summarise(avg_atp = mean(count))
+averageATP2$avg_atp <- round(averageATP2$avg_atp, digits = 2)
+
+ggplot(data = totalATPOverTime, aes(x = year, y = count, color = winner_name)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~winner_name, nrow = 3) +
+  geom_hline(data = averageATP2, aes(yintercept = avg_atp), linetype = "dashed", color = "white") +
+  geom_text(data = averageATP2, aes(x = 2001, y = 150, label = "Avg wins / year:"), color = "white") +  
+  geom_text(data = averageATP2, aes(x = 2001, y = 100, label = avg_atp), color = "white") +
+  scale_y_continuous(limits = c(0,200)) +
+  scale_x_continuous(limits = c(1998,2018)) +
+  xlab("Year") +
+  ylab("Number of ATP Match Wins") +
+  ggtitle("Performance Over Time: ATP Match Wins per Year") +
+  theme_dark() +
+  theme(legend.position = "none")
+
+```
+
+Similarly to the corresponding Grand Slam statistics, Federer leads in terms of total number of wins and titles.  However, in the total ATP stats, Federer also leads in terms of the average number of ATP match wins per year and essentially ties Djokovic in ATP titles per year.  This would tell us that Federer is a stronger overall ATP player than Grand Slam player in relation to Djokovic and Nadal.  We can also see that Nadal leads Djokovic in total ATP match wins whereas he trails Djokovic in total Grand Slam match wins.  Again, note that some error may be caused by injuries and the fact that each player’s first professional year wasn’t a full year.
+
+#### Career Title Wins Over Time
+
+```{r message=FALSE, warning=FALSE}
+
+ATPOverTime <- atpPerform %>%
+  filter(round == "F") %>%
+  group_by(year, winner_name) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  complete(year, winner_name, fill = list(count = 0)) %>%
+  filter((winner_name == "Roger Federer" & year >= 1998) | (winner_name == "Rafael Nadal" & year >= 2002) | (winner_name == "Novak Djokovic" & year >= 2004))
+fedZeroes3 <- tibble(year = 1998:1999, winner_name = "Roger Federer", count = 0)
+ATPOverTime2 <- fedZeroes3 %>%
+  rbind(ATPOverTime)
+
+averageATP <- ATPOverTime2 %>%
+  group_by(winner_name) %>%
+  summarise(avg_atp = mean(count))
+averageATP$avg_atp <- round(averageATP$avg_atp, digits = 2)
+
+ggplot(data = ATPOverTime2, aes(x = year, y = count, color = winner_name)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~winner_name, nrow = 3) +
+  geom_hline(data = averageATP, aes(yintercept = avg_atp), linetype = "dashed", color = "white") +
+  geom_text(data = averageATP, aes(x = 2001, y = 12, label = "Avg titles / year:"), color = "white") +  
+  geom_text(data = averageATP, aes(x = 2001, y = 7, label = avg_atp), color = "white") +
+  scale_y_continuous(limits = c(0,15)) +
+  scale_x_continuous(limits = c(1998,2018)) +
+  xlab("Year") +
+  ylab("Number of ATP Titles") +
+  ggtitle("Performance Over Time: ATP Titles per Year") +
+  theme_dark() +
+  theme(legend.position = "none")
+
+```
+
+Similarly to the corresponding Grand Slam statistics, Federer leads in terms of total number of wins and titles.  However, in the total ATP stats, Federer also leads in terms of the average number of ATP match wins per year and essentially ties Djokovic in ATP titles per year.  This would tell us that Federer is a stronger overall ATP player than Grand Slam player in relation to Djokovic and Nadal.  We can also see that Nadal leads Djokovic in total ATP match wins whereas he trails Djokovic in total Grand Slam match wins.  Again, note that some error may be caused by injuries and the fact that each player’s first professional year wasn’t a full year.
+
+
+### Head to Head
+
+If we are going to compare the greatness of these three players, we must see how they perform against one another!
+
+```{r message=FALSE, warning=FALSE}
+headToHead <- atpPerform %>%
+  filter(winner_name %in% c("Roger Federer", "Rafael Nadal", "Novak Djokovic") & loser_name %in% c("Roger Federer", "Rafael Nadal", "Novak Djokovic")) %>%
+  group_by(winner_name, loser_name) %>%
+  summarise(wins = n()) %>%
+  ungroup() %>%
+  mutate(prop = c(28/53, 26/48, 25/53, 23/38, 22/48, 15/38)) %>%
+  complete(winner_name, loser_name)
+headToHead$prop <- round(headToHead$prop, 2)
+
+ggplot(data = headToHead, aes(x = winner_name, y = loser_name)) +
+  geom_tile(aes(fill = wins)) +
+  geom_text(aes(label = wins, vjust = -0.8, hjust = -0.55), color = "white") +
+  geom_text(aes(label = prop, vjust = 0.8, hjust = -0.35), color = "white") +
+  geom_text(aes(label = if_else(!is.na(wins), "freq = ", ""), vjust = -0.8, hjust = 0.8), color = "white") +
+  geom_text(aes(label = if_else(!is.na(prop), "prop = ", ""), vjust = 0.8, hjust = 0.8), color = "white") +
+  scale_fill_gradient(low = "#90EE90", high = "#2E8B57", limits = c(15, 30), na.value = "dark green") +
+  xlab("Winner") +
+  ylab("Loser") +
+  ggtitle("Head to Head Matchups in ATP Tournaments") +
+  theme_bw()
+```
+
+It appears that Djokovic's head-to-head record is the best, having a winning record against both players.  Federer has the worst head-to-head record, only winning 39% of his matches against Nadal.
+
+
+### Injuries
+
+By analyzing the number of withdrawals by the three players during matches, we can get an idea of each player's injury tolerance.  We will use str_detect(score, "RET") to filter out the scores that end in an injury for Djokovic, Federer, and Nadal.
+
+```{r message=FALSE, warning=FALSE}
+
+injuries <- atpPerform %>%
+  filter(str_detect(score, "RET"), loser_name %in% c("Roger Federer", "Novak Djokovic", "Rafael Nadal"))
+
+groupedInjuries <- injuries %>%
+  group_by(loser_name) %>%
+  summarise(injuries = n()) 
+fedZeroes4 <- tibble(loser_name = "Roger Federer", injuries = 0)
+groupedInjuries2 <- fedZeroes4 %>%
+  rbind(groupedInjuries)
+
+ggplot(data = groupedInjuries2, aes(x = fct_reorder(loser_name, injuries), y = injuries)) +
+  geom_bar(stat = "identity", fill = c("blue", "green", "red")) +
+  geom_label(aes(label = injuries)) +
+  scale_y_continuous(limits = c(0, 15)) +
+  xlab("Player Name") +
+  ylab("Number of Injuries") +
+  ggtitle("Number of Injury Withdrawals During Matches by Player") +
+  coord_flip() +
+  theme_bw()
+
+```
+
+Incredibly, Roger Federer has never withdrawn during a match, and he has played ATP tournaments longer than both Djokovic and Nadal.  This shows remarkable injury tolerance in comparison to the other two players despite his older age. 
+
+
+### Who Performs Best Against the GOATs? {.tabset .tabset-fade .tabset-pills}
+
+We have already looked at the head-to-head results between the three players and already know that they all have tremendous success against the overall competition.  However, it would be interesting to take a look at the players who have relative success against these three greats. We will take the top 10 performers, and they must have played at least 5 matches against the GOAT candidate to qualify for the list.  Points on the graphs will be ordered by win proportion as top precedence and number of matches played as next precedence.  I like making these types of graphs because they visualize both proportions in order and statistical significance of those proportions through the size of the point.
+
+#### Roger Federer
+
+```{r message=FALSE, warning=FALSE}
+
+fedLosses <- atpPerform %>%
+  filter(loser_name == "Roger Federer", winner_name != "Novak Djokovic", winner_name != "Rafael Nadal")
+fedWins <- atpPerform %>%
+  filter(winner_name == "Roger Federer", loser_name != "Novak Djokovic", loser_name != "Rafael Nadal")
+
+groupedFedWins <- fedWins %>%
+  group_by(loser_name) %>%
+  summarise(count = n())
+
+groupedFedLosses <- fedLosses %>%
+  group_by(winner_name) %>%
+  summarise(count = n())
+
+groupedFedResults <- full_join(groupedFedWins, groupedFedLosses, by = c("loser_name" = "winner_name")) %>%
+  replace_na(list(`count.x` = 0, `count.y` = 0)) %>%
+  rename(player_name = loser_name, losses = `count.x`, wins = `count.y`) %>%
+  mutate(total_matches = wins + losses, win_prop = wins / (wins + losses)) %>%
+  arrange(desc(win_prop, total_matches)) %>%
+  filter(total_matches >= 5) %>%
+  top_n(10)
+
+ggplot(data = groupedFedResults, aes(x = fct_reorder(player_name, win_prop), y = win_prop)) +
+  geom_point(aes(size = total_matches)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_size_continuous(limits = c(5, 40), breaks = c(5,10,15,20,25,30,35,40)) +
+  xlab("Player Name") +
+  ylab("Win Proportion") +
+  labs(size = "Matches Played") +
+  ggtitle("Top 10 Performers vs. Roger Federer") +
+  coord_flip() +
+  theme_bw() 
+
+```
+
+Every player on the list who has beaten Federer 50% of the time or better was played few matches against him relative to the rest of the list.  However, everyone on the list is somewhere in the neighborhood of a 50% win rate.
+
+#### Rafael Nadal
+
+```{r message=FALSE, warning=FALSE}
+
+nadLosses <- atpPerform %>%
+  filter(loser_name == "Rafael Nadal", winner_name != "Novak Djokovic", winner_name != "Roger Federer")
+nadWins <- atpPerform %>%
+  filter(winner_name == "Rafael Nadal", loser_name != "Novak Djokovic", loser_name != "Roger Federer")
+
+groupedNadWins <- nadWins %>%
+  group_by(loser_name) %>%
+  summarise(count = n())
+
+groupedNadLosses <- nadLosses %>%
+  group_by(winner_name) %>%
+  summarise(count = n())
+
+groupedNadResults <- full_join(groupedNadWins, groupedNadLosses, by = c("loser_name" = "winner_name")) %>%
+  replace_na(list(`count.x` = 0, `count.y` = 0)) %>%
+  rename(player_name = loser_name, losses = `count.x`, wins = `count.y`) %>%
+  mutate(total_matches = wins + losses, win_prop = wins / (wins + losses)) %>%
+  arrange(desc(win_prop, total_matches)) %>%
+  filter(total_matches >= 5) %>%
+  top_n(10)
+
+ggplot(data = groupedNadResults, aes(x = fct_reorder(player_name, win_prop), y = win_prop)) +
+  geom_point(aes(size = total_matches)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_size_continuous(limits = c(5, 40), breaks = c(5,10,15,20,25,30,35,40)) +
+  xlab("Player Name") +
+  ylab("Win Proportion") +
+  labs(size = "Matches Played") +
+  ggtitle("Top 10 Performers vs. Rafael Nadal") +
+  coord_flip() +
+  theme_bw() 
+
+```
+
+Only one player on the tour has played Nadal atleast 5 times and has a winning record against him, though this point on the graph is quite strong as the two players played 11 matches.
+
+#### Novak Djokovic
+
+```{r message=FALSE, warning=FALSE}
+
+djoLosses <- atpPerform %>%
+  filter(loser_name == "Novak Djokovic", winner_name != "Rafael Nadal", winner_name != "Roger Federer")
+djoWins <- atpPerform %>%
+  filter(winner_name == "Novak Djokovic", loser_name != "Rafael Nadal", loser_name != "Roger Federer")
+
+groupedDjoWins <- djoWins %>%
+  group_by(loser_name) %>%
+  summarise(count = n())
+
+groupedDjoLosses <- djoLosses %>%
+  group_by(winner_name) %>%
+  summarise(count = n())
+
+groupedDjoResults <- full_join(groupedDjoWins, groupedDjoLosses, by = c("loser_name" = "winner_name")) %>%
+  replace_na(list(`count.x` = 0, `count.y` = 0)) %>%
+  rename(player_name = loser_name, losses = `count.x`, wins = `count.y`) %>%
+  mutate(total_matches = wins + losses, win_prop = wins / (wins + losses)) %>%
+  arrange(desc(win_prop, total_matches)) %>%
+  filter(total_matches >= 5) %>%
+  top_n(10)
+
+ggplot(data = groupedDjoResults, aes(x = fct_reorder(player_name, win_prop), y = win_prop)) +
+  geom_point(aes(size = total_matches)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_size_continuous(limits = c(5, 40), breaks = c(5,10,15,20,25,30,35,40)) +
+  xlab("Player Name") +
+  ylab("Win Proportion") +
+  labs(size = "Matches Played") +
+  ggtitle("Top 10 Performers vs. Novak Djokovic") +
+  coord_flip() +
+  theme_bw() 
+
+```
+
+Djokovic's results here are the most impressive.  Aside from Andy Roddick and Oliver Rochus, every player that has competeted against him 5 or more times has lost 2/3 of the time or more. It is noticeable that Andy Murray appears on all three of these graphs with many matches played, and this makes sense as many view him as the 4th best player of the modern era behind the "big three" in our analysis.
+
+
+## Rankings
+
+Now that we've covered each player's performance in the ATP, including exclusively Grand Slams, let's analyze how this performance has translated into rankings.  ATP rankings are determined by the amount of ATP points a player has earned in the past year, and these points are achieved by winning rounds in ATP tournaments.  The most points are awarded in bigger tournaments or in later rounds, and the level of the tournament (ATP 250, ATP 500, ATP 1000, grand slam) corresponds to the number of points at stake. ([click here](file:///Users/Ethan/Downloads/2017-atp-rulebook_chapter-ix.pdf) to access the ATP rulebook showing a full guide on how rankings are determined).  Will similar patterns we found in the previous sections relfect in this section?
+
+```{r message=FALSE, warning=FALSE}
+
+rankings90s <- read_csv("atp_rankings_90s.csv")
+rankings00s <- read_csv("atp_rankings_00s.csv")
+rankings10s <- read_csv("atp_rankings_10s.csv")
+rankings2019 <- read_csv("atp_rankings_current.csv")
+
+atpRankings <- rbind(rankings90s, rankings00s, rankings10s, rankings2019) %>%
+  filter(player %in% c(104925, 104745, 103819)) %>%
+  mutate(player = if_else(player == 104925, "Novak Djokovic", if_else(player == 104745, "Rafael Nadal", "Roger Federer")))
+atpRankings$ranking_date <- ymd(atpRankings$ranking_date)
+
+```
+
+Note: Our data spans from the beginning of each player's career to February 25, 2019.
+
+<center> ![ATP Tournament Types](https://www.pledgesports.org/wp-content/uploads/2018/11/Screen-Shot-2018-11-15-at-13.22.541-1024x555.png) </center>
+
+### Weeks at #1 {.tabset .tabset-fade .tabset-pills}
+
+ATP rankings are updated weekly, so we can visualize how many weeks each player has spent at #1.  You can multiplty these numbers by 7 to get the amount of days spent at #1 by each player, and divide by 52 to get the amount of years spent.
+
+#### Total Weeks
+
+```{r message=FALSE, warning=FALSE}
+
+weeksAt1 <- atpRankings %>%
+  group_by(player, rank) %>%
+  summarise(count = n()) %>%
+  filter(rank == 1)
+
+ggplot(data = weeksAt1, aes(x = fct_reorder(player, count), y = count)) +
+  geom_bar(stat = "identity", fill = c("green", "red", "blue")) +
+  geom_label(aes(label = count)) +
+  xlab("Player Name") +
+  ylab("Number of Weeks at #1") +
+  ggtitle("ATP Rankings: Number of Total Weeks Spent at #1 by Player") +
+  theme_bw()
+
+```
+
+This looks similar to our previous graphs illustrating Federer's lead in number of ATP match and title wins.  However, here, Djokovic is ahead of Nadal in weeks at #1 whereas he is behind Nadal in terms of ATP matches and titles won.
+
+#### Consecutive Weeks
+
+```{r message=FALSE, warning=FALSE}
+
+consecutiveWeeks <- atpRankings %>%
+  arrange(player)
+
+splitRanks <- split(consecutiveWeeks, consecutiveWeeks$player)
+djoRanks <- splitRanks[[1]][2]
+nadRanks <- splitRanks[[2]][2]
+fedRanks <- splitRanks[[3]][2]
+
+most_consecutive_val = function(x, val = 1) {
+  with(rle(x), if(all(values != val)) 0 else max(lengths[values == val]))
+}
+
+fedConsecutive <- lapply(fedRanks, most_consecutive_val)
+nadConsecutive <- lapply(nadRanks, most_consecutive_val)
+djoConsecutive <- lapply(djoRanks, most_consecutive_val)
+
+consecutiveCombine <- tibble(player = c("Novak Djokovic", "Rafael Nadal", "Roger Federer"), cons_weeks = c(109, 51, 237))
+
+ggplot(data = consecutiveCombine, aes(x = fct_reorder(player, cons_weeks), y = cons_weeks)) +
+  geom_bar(stat = "identity", fill = c("green", "red", "blue")) +
+  geom_label(aes(label = cons_weeks)) +
+  xlab("Player Name") +
+  ylab("Number of Weeks at #1") +
+  ggtitle("ATP Rankings: Top number of Consecutive Weeks Spent at #1 by Player") +
+  theme_bw()
+
+```
+
+This section was slightly more complicated as we needed our own function.  Federer is far ahead here as he dominated the #1 spot for over 4.5 years straight! 
+
+### Rankings Over Time (COMING SOON)
+
+
+**MORE ANALYSIS COMING SOON!**

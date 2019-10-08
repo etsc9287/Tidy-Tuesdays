@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1570511742499.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "717D9D4F",
+    "lastKnownWriteTime" : 4301851136,
+    "last_content_update" : 1570511742499,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "E5A17564",
+        "caption" : "dqs",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=dqs&cache_key=E5A17564",
+        "displayedObservations" : 914,
+        "environment" : "",
+        "object" : "dqs",
+        "preview" : 0,
+        "totalObservations" : 914,
+        "variables" : 3
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
