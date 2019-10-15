@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1571110452857.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "F310F7F",
+    "lastKnownWriteTime" : 403726925824,
+    "last_content_update" : 1571110452857,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "37E18E6B",
+        "caption" : "big_epa_cars",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=big_epa_cars&cache_key=37E18E6B",
+        "displayedObservations" : 41804,
+        "environment" : "",
+        "object" : "big_epa_cars",
+        "preview" : 0,
+        "totalObservations" : 41804,
+        "variables" : 83
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1571106175161.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "5764C2E5",
+    "lastKnownWriteTime" : 1571123623,
+    "last_content_update" : 1571159664061,
+    "path" : "~/Desktop/R/Personal Projects/Tidy-Tuesdays/Tidy-Tuesdays/Tidy Tuesday #4 - Big Cars/bigcars.R",
+    "project_path" : "bigcars.R",
+    "properties" : {
+        "cursorPosition" : "34,0",
+        "scrollLine" : "17",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
