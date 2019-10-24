@@ -27,8 +27,8 @@ cars1 %>%
   coord_flip() +
   xlab(NULL) +
   ylab("Average Save to Spend Ratio Over 5 yrs (USD)") +
-  ggtitle("Which Car is the Best on the Market since 2015?", subtitle = "Comparing Teslas to the most common cars") +
-  labs(size = "Average MPG / MPC", color = "Average CO2 Emissions\n(grams/mile)") +
+  ggtitle("Which Manufacturer Has Made the Best Cars Since 2015?", subtitle = "Comparing Teslas to the most common cars") +
+  labs(size = "Average Highway\nMPG / MPC", color = "Average CO2 Emissions\n(grams/mile)") +
   scale_color_continuous(low = "green", high = "red") +
   theme(text = element_text(family = "AppleMyungjo")) 
 

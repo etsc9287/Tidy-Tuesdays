@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1571867418784.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "CE4FC0EF",
+    "lastKnownWriteTime" : 8747232185758515200,
+    "last_content_update" : 1571867418784,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "E91DC150",
+        "caption" : "top_genres",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=top_genres&cache_key=E91DC150",
+        "displayedObservations" : "31",
+        "environment" : "",
+        "object" : "top_genres",
+        "preview" : "0",
+        "totalObservations" : "31",
+        "variables" : "2"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
