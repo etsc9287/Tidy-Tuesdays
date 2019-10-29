@@ -1,0 +1,465 @@
+---
+title: ' New York City AirBnb Complete Analysis'
+author: "Ethan Schacht"
+date: "10/3/2019"
+output: 
+  html_document:
+    toc: yes
+    number_sections: yes
+    code_folding: hide
+    theme: simplex
+    highlight: espresso
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(echo = FALSE,
+               out.width = "75%", 
+               fig.align = "center")
+```
+
+<style type="text/css">
+
+body{
+  font-size: 14pt;
+}
+
+</style>
+
+# **Introduction**
+
+Welcome to my 2nd Kaggle analysis! Using packages in R such as ggplot2 and ggmap, I will provide EDA on New York City's AirBnb data. AirBnb is an online marketplace in which people can offer lodging for others in their own homes as an alternative for hotels, and you can read more [here](https://en.wikipedia.org/wiki/Airbnb)  
+
+I am a young learning college student who is always open to suggestions so feel free to leave a comment and/or a like! :) I will update this notebook with more analysis on more variables soon!
+
+![](https://static1.squarespace.com/static/5813cddb8419c25c3b42eacd/5813e156414fb51499dfe55c/58168c5bf7e0ab86f3cc15c9/1567055214604/?format=1000w)
+
+# **Preparing the Data**
+
+## Import / Quick Look
+
+First, let's load the necessary libraries and import our data to see what we are working with...
+
+```{r message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(ggmap)
+library(ggthemr)
+library(extrafont)
+library(lubridate)
+library(Hmisc)
+library(corrplot)
+library(curl)
+library(httr)
+
+ggthemr(palette = "earth", type = "outer")
+
+airbnb <- read_csv("AB_NYC_2019.csv")
+
+register_google(key = "AIzaSyAfMGEJ-uEdqvBDTCMbN0VWyf3C7eDQ280")
+
+head(airbnb, 10)
+summary(airbnb)
+
+```
+
+We have 48,895 total rows and 16 columns, and each row represents a separate Airbnb.  The mean far exceeds the median for most of our columns, meaning most of our data is skewed to the right (we will take a look at the distributions in a following section). 
+
+## Missing Values
+
+It also appears we have 10,052 missing values in the last_review and reviews_per_month columns.  Let's explore this...
+
+```{r message=FALSE, warning=FALSE}
+
+airbnb %>%
+  filter(is.na(last_review)) %>%
+  select(number_of_reviews, last_review, reviews_per_month) %>%
+  head(5)
+
+```
+
+As expected, these missing values correspond with one another and represent Airbnbs that haven't receieved any reviews.  Aside from this the data has already been cleaned for us.
+
+# Exploratory Data Analysis
+
+## Variation {.tabset .tabset-fade .tabset-pills}
+
+Let's look at some of the distributions of out variables of interest.
+
+### Price
+
+```{r message=FALSE, warning=FALSE}
+  
+airbnb %>%
+  filter(price < 2500) %>%
+  ggplot(aes(price)) +
+  geom_histogram(binwidth = 50) +
+  xlab("Price") +
+  ylab("Count") +
+  ggtitle("Distribution of Airbnb Prices in NYC")
+
+airbnb %>%
+  arrange(desc(price)) %>%
+  head(20) %>%
+  select(name, price)
+
+```
+
+There are obvious outliers heavily skewing this data, so I filtered out all prices greater than $2500.  We will take a closer look at the outliers in covariation.
+
+### Room Type
+
+```{r message=FALSE, warning=FALSE}
+
+group_room <- airbnb %>%
+  group_by(room_type) %>%
+  summarise(n = n())
+
+group_room %>%
+  ggplot(aes(fct_reorder(room_type, n), n, fill = c("red", "green", "blue"))) +
+  geom_bar(stat = "identity") +
+  geom_label(aes(label = n)) +
+  xlab("Room Type") +
+  ylab("Count") +
+  ggtitle("Airbnb Room Types in New York City") +
+  theme(legend.position = "none")
+
+```
+
+### Neighborhoods 
+
+```{r message=FALSE, warning=FALSE}
+
+neighborhoods <- airbnb %>%
+  group_by(neighbourhood_group) %>%
+  summarise(n = n())
+sub_n <- airbnb %>%
+  select(neighbourhood_group, neighbourhood) %>%
+  distinct() %>%
+  group_by(neighbourhood_group) %>%
+  summarise(n = n()) %>%
+  inner_join(neighborhoods, by = "neighbourhood_group")
+
+sub_n %>%
+  ggplot(aes(fct_reorder(neighbourhood_group, `n.y`), `n.y`, fill = `n.x`)) +
+  geom_bar(stat = "identity") +
+  geom_label(aes(label = `n.y`)) +
+  xlab("Neighborhood") +
+  ylab("Count") +
+  labs(fill = "Number of \nNeighborhoods") +
+  ggtitle("Airbnb Distribution by Borough in NYC") +
+  scale_fill_continuous(low = "green", high = "red")
+
+```
+
+Manhattan has the largest number of Airbnbs but the smallest number of neighborhoods.
+
+### Hosts
+
+```{r message=FALSE, warning=FALSE}
+
+hosts <- airbnb %>%
+  group_by(host_id) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n))
+  
+
+hosts %>%
+  filter(n <= 10) %>%
+  ggplot(aes(x = n)) +
+  geom_histogram(binwidth = 1) +
+  scale_x_continuous(breaks = c(0:10)) +
+  xlab("Number of Listings per Host") +
+  ylab("Count") +
+  ggtitle("Number of Listings per Host for Airbnbs in NYC")
+
+hosts %>%
+  head(10) 
+```
+
+The majority of hosts only host one Airbnb, though this distribution is heavily skewed.  One host has posted 327 listings for their home!
+
+## Covariation
+
+Now let's look at the relationships between some of our variables...
+
+### Correlation Matrix
+
+This correlation plot will tell us if there is any significant relationship between our relevant continuous variables.
+
+```{r message=FALSE, warning=FALSE}
+
+continuous <- airbnb %>%
+  select(price, minimum_nights, reviews_per_month, calculated_host_listings_count, availability_365)
+corrmat <- rcorr(as.matrix(continuous))
+
+corrplot(corrmat$r, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
+
+corrmat$r
+```
+
+There is weak positive correlation between most our variables, though the strongest of the relationships is bewteen availability and the host's amount of listings.  This makes sense because a person trying to make more money renting airbnbs would post more listings, and also try to optimize availability.  There is also a noticeable relationship between availability and reviews per month which makes sense as a more available Airbnb would bring in more customers.
+
+### Price by Room Type
+
+```{r message=FALSE, warning=FALSE}
+
+median_price <- airbnb %>%
+  group_by(room_type) %>%
+  summarise(median = median(price))
+
+airbnb %>%
+  filter(price <= 300) %>%
+  ggplot(aes(room_type, price)) +
+  geom_boxplot() +
+  xlab("Room Type") +
+  ylab("Price") +
+  ggtitle("Airbnb Prices by Room Type", subtitle = "Any prices above $300 are not included") +
+  geom_text(data = median_price, aes(room_type, median, label = paste0("$", median)), vjust = -0.5)
+
+```
+
+In general, the more space you get, the higher the price.
+
+## Mapping
+
+Time to use ggmap to visualize our variables by location!
+
+### Popularity by District {.tabset .tabset-fade .tabset-pills}
+
+We already have a distribution showing Airbnb listings by district.  Now let's visualize the variation within each district.
+
+#### Manhattan
+
+```{r message=FALSE, warning=FALSE}
+
+manhattan <- airbnb %>%
+  filter(neighbourhood_group == "Manhattan")
+
+manhattan_n <- manhattan %>%
+  group_by(neighbourhood) %>%
+  summarise(avg_long = mean(longitude), avg_lat = mean(latitude), n = n()) %>%
+  arrange(desc(n)) %>%
+  head(5)
+
+get_map("Manhattan", maptype = "roadmap", zoom = 12) %>% ggmap() +
+  stat_density2d(data = manhattan, aes(longitude, latitude, fill = ..level..), geom = "polygon", alpha = 0.3) +
+  scale_fill_continuous(low = "green", high = "red") +
+  ggtitle("Heatmap of Airbnbs in Manhattan", subtitle = "Busiest neighborhoods labeled") +
+  geom_text(data = manhattan_n, aes(avg_long, avg_lat, label = neighbourhood), color = "black") +
+  theme(text = element_text(family = "Tahoma"))
+
+```
+
+#### Brooklyn
+
+```{r message=FALSE, warning=FALSE}
+
+brooklyn <- airbnb %>%
+  filter(neighbourhood_group == "Brooklyn")
+
+brooklyn_n <- brooklyn %>%
+  group_by(neighbourhood) %>%
+  summarise(avg_long = mean(longitude), avg_lat = mean(latitude), n = n()) %>%
+  arrange(desc(n)) %>%
+  head(5)
+
+ggmap(get_googlemap("Brooklyn", maptype = "roadmap", zoom = 12)) +
+  stat_density2d(data = brooklyn, aes(longitude, latitude, fill = ..level..), geom = "polygon", alpha = 0.3) +
+  scale_fill_continuous(low = "green", high = "red") +
+  ggtitle("Heatmap of Airbnbs in Brooklyn", subtitle = "Busiest neighborhoods labeled") +
+  geom_text(data = brooklyn_n, aes(avg_long, avg_lat, label = neighbourhood), color = "black") +
+  theme(text = element_text(family = "Tahoma"))
+
+```
+
+#### Queens
+
+```{r message=FALSE, warning=FALSE}
+
+queens <- airbnb %>%
+  filter(neighbourhood_group == "Queens")
+
+queens_n <- queens %>%
+  group_by(neighbourhood) %>%
+  summarise(avg_long = mean(longitude), avg_lat = mean(latitude), n = n()) %>%
+  arrange(desc(n)) %>%
+  head(5)
+
+ggmap(get_googlemap("Corona New york", maptype = "roadmap", zoom = 12)) +
+  stat_density2d(data = queens, aes(longitude, latitude, fill = ..level..), geom = "polygon", alpha = 0.3) +
+  scale_fill_continuous(low = "green", high = "red") +
+  ggtitle("Heatmap of Airbnbs in Queens", subtitle = "Busiest neighborhoods labeled") +
+  geom_text(data = queens_n, aes(avg_long, avg_lat, label = neighbourhood), color = "black") +
+  theme(text = element_text(family = "Tahoma"))
+
+```
+
+#### The Bronx
+
+```{r message=FALSE, warning=FALSE}
+
+bronx <- airbnb %>%
+  filter(neighbourhood_group == "Bronx")
+
+bronx_n <- bronx %>%
+  group_by(neighbourhood) %>%
+  summarise(avg_long = mean(longitude), avg_lat = mean(latitude), n = n()) %>%
+  arrange(desc(n)) %>%
+  head(5)
+
+ggmap(get_googlemap("Bronx", maptype = "roadmap", zoom = 12)) +
+  stat_density2d(data = bronx, aes(longitude, latitude, fill = ..level..), geom = "polygon", alpha = 0.3) +
+  scale_fill_continuous(low = "green", high = "red") +
+  ggtitle("Heatmap of Airbnbs in The Bronx", subtitle = "Busiest neighborhoods labeled") +
+  geom_text(data = bronx_n, aes(avg_long, avg_lat, label = neighbourhood), color = "black") +
+  theme(text = element_text(family = "Tahoma"))
+
+```
+
+#### Staten Island
+
+```{r message=FALSE, warning=FALSE}
+
+staten <- airbnb %>%
+  filter(neighbourhood_group == "Staten Island")
+
+staten_n <- staten %>%
+  group_by(neighbourhood) %>%
+  summarise(avg_long = mean(longitude), avg_lat = mean(latitude), n = n()) %>%
+  arrange(desc(n)) %>%
+  filter(neighbourhood %in% c("St. George", "Tompkinsville", "Concord"))
+
+ggmap(get_googlemap("Staten Island", maptype = "roadmap", zoom = 12)) +
+  stat_density2d(data = staten, aes(longitude, latitude, fill = ..level..), geom = "polygon", alpha = 0.3) +
+  scale_fill_continuous(low = "green", high = "red") +
+  ggtitle("Heatmap of Airbnbs in Staten Island", subtitle = "Busiest neighborhoods labeled") +
+  geom_text(data = staten_n, aes(avg_long, avg_lat, label = neighbourhood), color = "black") +
+  theme(text = element_text(family = "Tahoma"))
+
+```
+
+### Price by District {.tabset .tabset-fade .tabset-pills}
+
+Now we will analyze the prices within each district.  Note that we will use the median as the average as we saw that the price distribution is heavily skewed to the right.
+
+```{r message=FALSE, warning=FALSE}
+
+prices <- airbnb %>%
+  group_by(neighbourhood_group) %>%
+  summarise(avg_price = median(price), avg_long = mean(longitude), avg_lat = mean(latitude))
+
+```
+
+#### Manhattan
+
+```{r message=FALSE, warning=FALSE}
+
+manhattan_prices <- manhattan %>%
+  filter(price <= 300)
+
+ggmap(get_googlemap("Manhattan", maptype = "roadmap", zoom = 12)) +
+  geom_point(data = manhattan_prices, aes(longitude, latitude, color = price), alpha = 0.1) +
+  ggtitle("Airbnb Prices in Manhattan", subtitle = "Any prices above $300 are not included") +
+  theme(text = element_text(family = "Tahoma")) +
+  scale_color_continuous(low = "green", high = "red") +
+  geom_text(data = prices, aes(avg_long[[3]], avg_lat[[3]], label = paste0("Median Price:\n $", avg_price[[3]])), color = "black")
+
+```
+
+#### Brooklyn
+
+```{r message=FALSE, warning=FALSE}
+
+brooklyn_prices <- brooklyn %>%
+  filter(price <= 300)
+
+ggmap(get_googlemap("Brooklyn", maptype = "roadmap", zoom = 12)) +
+  geom_point(data = brooklyn_prices, aes(longitude, latitude, color = price), alpha = 0.1) +
+  ggtitle("Airbnb Prices in Brooklyn", subtitle = "Any prices above $300 are not included") +
+  theme(text = element_text(family = "Tahoma")) +
+  scale_color_continuous(low = "green", high = "red") +
+  geom_text(data = prices, aes(avg_long[[2]], avg_lat[[2]], label = paste0("Median Price:\n $", avg_price[[2]])), color = "black")
+
+```
+
+#### Queens
+
+```{r message=FALSE, warning=FALSE}
+
+queens_prices <- queens %>%
+  filter(price <= 300)
+
+ggmap(get_googlemap("Corona New York", maptype = "roadmap", zoom = 12)) +
+  geom_point(data = queens_prices, aes(longitude, latitude, color = price), alpha = 0.1) +
+  ggtitle("Airbnb Prices in Queens", subtitle = "Any prices above $300 are not included") +
+  theme(text = element_text(family = "Tahoma")) +
+  scale_color_continuous(low = "green", high = "red") +
+  geom_text(data = prices, aes(avg_long[[4]], avg_lat[[4]], label = paste0("Median Price:\n $", avg_price[[4]])), color = "black")
+
+```
+
+#### The Bronx
+
+```{r message=FALSE, warning=FALSE}
+
+bronx_prices <- bronx %>%
+  filter(price <= 300)
+
+ggmap(get_googlemap("Bronx", maptype = "roadmap", zoom = 12)) +
+  geom_point(data = bronx_prices, aes(longitude, latitude, color = price)) +
+  ggtitle("Airbnb Prices in The Bronx", subtitle = "Any prices above $300 are not included") +
+  theme(text = element_text(family = "Tahoma")) +
+  scale_color_continuous(low = "green", high = "red") +
+  geom_text(data = prices, aes(avg_long[[1]], avg_lat[[1]], label = paste0("Median Price:\n $", avg_price[[1]])), color = "black")
+
+```
+
+#### Staten Island
+
+```{r message=FALSE, warning=FALSE}
+
+staten_prices <- staten %>%
+  filter(price <= 300)
+
+ggmap(get_googlemap("Staten Island", maptype = "roadmap", zoom = 12)) +
+  geom_point(data = staten_prices, aes(longitude, latitude, color = price)) +
+  ggtitle("Airbnb Prices in Staten Island", subtitle = "Any prices above $300 are not included") +
+  theme(text = element_text(family = "Tahoma")) +
+  scale_color_continuous(low = "green", high = "red") +
+  geom_text(data = prices, aes(avg_long[[5]], avg_lat[[5]], label = paste0("Median Price:\n $", avg_price[[5]])), color = "black")
+
+```
+
+#### Luxury
+
+```{r message=FALSE, warning=FALSE}
+
+luxury <- airbnb %>%
+  arrange(desc(price)) %>%
+  filter(price >= 3000)
+
+super_luxury <- luxury %>%
+  head(3)
+
+ggmap(get_googlemap("New York City", maptype = "roadmap", zoom = 11)) +
+  geom_point(data = luxury, aes(longitude, latitude, color = "red")) +
+  ggtitle("Luxury Priced Airbnbs in NYC", subtitle = "Prices at or above $3000 shown") +
+  theme(text = element_text(family = "Tahoma")) +
+  theme(legend.position = "none") +
+  geom_point(data = super_luxury, aes(longitude, latitude), color = "blue") +
+  geom_text(data = super_luxury, aes(longitude, latitude, label = "$10k"), color = "black", hjust = -0.25)
+
+```
+
+# Conclusion
+
+From the analysis, we can make the following conclusions:
+
+* If your main concern is a lower price when purchasing an AirBnb in New York City, try getting a shared room.  If feasible, try reserving a room in The Bronx where the median price is $65 a night or alternatively Queens or Staten Island where the median price is $75 a night.  Avoid Manhattan, especially lower Manhattan.
+* If your main concern is luxury, go to Manhattan (especially lower Manhattan) or northwest Brooklyn.  If you won the lottery, check out the three total $10,000 listings in Manhattan, Brooklyn, and Queens.
+* If your main concern is as many AirBnb options as possible, go to Brooklyn or Manhattan.  See the maps under "popularity by district" to find which neighborhoods in each district offer the most options if you must stay within a specific district.
+* Any of the above statements can also be used as advice for anyone looking to optimize income off of Airbnb or attract as many people as possible.
+* If you want more reviews for your Airbnb, make it available for as many days as possible.
+
+** More Analysis Coming Soon!! **

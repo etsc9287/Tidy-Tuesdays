@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1572283143440.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "4525A81A",
+    "lastKnownWriteTime" : 8454432399880180783,
+    "last_content_update" : 1572283143440,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "8F746657",
+        "caption" : "squirrels",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=squirrels&cache_key=8F746657",
+        "displayedObservations" : 3023,
+        "environment" : "",
+        "object" : "squirrels",
+        "preview" : 0,
+        "totalObservations" : 3023,
+        "variables" : 36
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

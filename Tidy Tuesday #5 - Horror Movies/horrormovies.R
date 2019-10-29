@@ -25,6 +25,9 @@ clean_horror2 <- clean_horror %>%
   group_by(release_year, genres) %>%
   summarise(count = n()) 
 
+font_add("rjudas", regular = "Rjudas.otf")
+showtext_auto()
+         
 clean_horror2 %>%
   semi_join(top_genres, by = "genres") %>%
   ggplot(aes(release_year, genres)) +
@@ -34,9 +37,4 @@ clean_horror2 %>%
   scale_x_continuous(breaks = c(2011, 2012, 2013, 2014, 2015, 2016, 2017)) +
   ylab("Genre") +
   ggtitle("Frequencies of Other Genres in Horror Movies Over Time") +
-  theme(text = element_text(family = "Trattatello"))
-
-fonts()
-
-table(clean_horror$genres)
-         
+  theme(text = element_text(family = ""))
