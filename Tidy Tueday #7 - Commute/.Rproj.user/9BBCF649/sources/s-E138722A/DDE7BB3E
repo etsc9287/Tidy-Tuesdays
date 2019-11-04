@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1572901642226.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "DDE7BB3E",
+    "lastKnownWriteTime" : 4664066058,
+    "last_content_update" : 1572901642226,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "4EA5719D",
+        "caption" : "commute",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=commute&cache_key=4EA5719D",
+        "displayedObservations" : 104,
+        "environment" : "",
+        "object" : "commute",
+        "preview" : 0,
+        "totalObservations" : 104,
+        "variables" : 3
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

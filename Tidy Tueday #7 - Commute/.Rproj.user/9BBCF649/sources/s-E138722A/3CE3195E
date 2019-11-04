@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1572902580921.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "3CE3195E",
+    "lastKnownWriteTime" : 7575666439145668096,
+    "last_content_update" : 1572902580921,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "E4CC533A",
+        "caption" : "lab_map",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=lab_map&cache_key=E4CC533A",
+        "displayedObservations" : 15468,
+        "environment" : "",
+        "object" : "lab_map",
+        "preview" : 0,
+        "totalObservations" : 15468,
+        "variables" : 5
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
