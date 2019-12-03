@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1573496470321.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1659433783",
+    "id" : "408F3F51",
+    "lastKnownWriteTime" : 1573509496,
+    "last_content_update" : 1573509496175,
+    "path" : "~/Desktop/R/Personal Projects/Tidy-Tuesdays/Tidy-Tuesdays/Tidy Tuesday #8 - CRAN/cran.R",
+    "project_path" : "cran.R",
+    "properties" : {
+        "cursorPosition" : "23,0",
+        "scrollLine" : "5",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

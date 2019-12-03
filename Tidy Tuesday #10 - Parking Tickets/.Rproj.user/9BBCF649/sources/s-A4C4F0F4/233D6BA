@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1575351031290.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "233D6BA",
+    "lastKnownWriteTime" : 1575350719,
+    "last_content_update" : 1575351031290,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "CB4F6CB9",
+        "caption" : "tickets2",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=tickets2&cache_key=CB4F6CB9",
+        "displayedObservations" : 1260891,
+        "environment" : "",
+        "object" : "tickets2",
+        "preview" : 0,
+        "totalObservations" : 1260891,
+        "variables" : 8
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

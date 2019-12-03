@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1575350708587.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3327646259",
+    "id" : "965B4085",
+    "lastKnownWriteTime" : 1575353633,
+    "last_content_update" : 1575353633691,
+    "path" : "~/Desktop/R/Personal Projects/Tidy-Tuesdays/Tidy-Tuesdays/Tidy Tuesday #10 - Parking Tickets/tickets.R",
+    "project_path" : "tickets.R",
+    "properties" : {
+        "cursorPosition" : "7,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
